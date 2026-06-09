@@ -4,6 +4,7 @@ import express from 'express';
 
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
+import vendorRoutes from './routes/vendor.routes.js';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/vendor', vendorRoutes);
 
 // Health check
 app.get('/', (req, res) => {

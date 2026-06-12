@@ -24,8 +24,17 @@ export const createOrder = async (req, res) => {
       return res.status(404).json({message: 'Booking not found'});
     }
 
+    // Fallback logic: use price.final if available, otherwise use
+    // price.estimated
+    const chargeAmount = booking.price.final || booking.price.estimated;
+
+    if (!chargeAmount) {
+      return res.status(400).json(
+          {message: 'No valid amount found for this booking'});
+    }
+
     // Amount in paise (multiply rupees by 100)
-    const amount = booking.price.final * 100;
+    const amount = chargeAmount * 100;
 
     // Create Razorpay order
     const razorpayOrder = await razorpay.orders.create({

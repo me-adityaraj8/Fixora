@@ -5,6 +5,7 @@ import express from 'express';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
+import reviewRoutes from './routes/review.routes.js';
 import vendorRoutes from './routes/vendor.routes.js';
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/booking', bookingRoutes);
+app.use('/api/review', reviewRoutes);
 
 // Health check
 app.get('/', (req, res) => {

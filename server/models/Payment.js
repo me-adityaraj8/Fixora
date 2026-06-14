@@ -12,6 +12,11 @@ const paymentSchema = new mongoose.Schema(
         ref: 'User',
         required: true,
       },
+      vendor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Vendor',
+        required: true,
+      },
       amount: {
         type: Number,
         required: true,
@@ -20,15 +25,14 @@ const paymentSchema = new mongoose.Schema(
         type: String,
         default: 'INR',
       },
-      status: {
-        type: String,
-        enum: ['pending', 'success', 'failed', 'refunded'],
-        default: 'pending',
-      },
       method: {
         type: String,
-        enum: ['razorpay', 'cash', 'upi'],
-        default: 'razorpay',
+        enum: ['card', 'upi', 'netbanking', 'wallet', 'cash'],
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'paid', 'failed', 'refunded'],
+        default: 'pending',
       },
       razorpayOrderId: {
         type: String,
@@ -38,6 +42,9 @@ const paymentSchema = new mongoose.Schema(
       },
       razorpaySignature: {
         type: String,
+      },
+      paidAt: {
+        type: Date,
       },
     },
     {timestamps: true});

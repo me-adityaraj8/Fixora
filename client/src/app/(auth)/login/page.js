@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth.service";
+import { useAuth } from "@/context/AuthContext";
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,8 +18,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const data = await loginUser(formData);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      login(data.user, data.token);
       router.push("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");

@@ -1,11 +1,10 @@
-import express from 'express';
-
-import {getVendorProfile, registerVendor} from '../controllers/vendor.controller.js';
-import {authorizeRoles, protect} from '../middlewares/auth.middleware.js';
+import express from "express";
+import { registerVendor, getVendorProfile, getAllVendors } from "../controllers/vendor.controller.js";
+import { protect } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
-
-router.post('/register', protect, registerVendor);
-router.get('/profile', protect, getVendorProfile);
+router.post("/register", protect, registerVendor);
+router.get("/profile", protect, getVendorProfile);
+router.get("/all", getAllVendors);
 
 export default router;

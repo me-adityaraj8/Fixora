@@ -1,17 +1,24 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth.service";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -26,27 +33,65 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login to Fixora</h1>
-        {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    <div className="flex items-center justify-center min-h-[calc(100vh-73px)] bg-slate-50/50 px-4">
+      <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-sm border border-slate-200/60">
+        <div className="flex flex-col space-y-2 text-center mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Welcome back
+          </h1>
+          <p className="text-sm text-slate-500">
+            Enter your credentials to access your Fixora account
+          </p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg text-center font-medium mb-4 border border-red-100">
+            {error}
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input type="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-slate-700 font-medium">Email address</Label>
+            <Input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="name@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="h-10 border-slate-200 focus-visible:ring-blue-500 text-slate-900"
+            />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50">
-            {loading ? "Logging in..." : "Login"}
-          </button>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="h-10 border-slate-200 focus-visible:ring-blue-500 text-slate-900"
+            />
+          </div>
+
+          <Button type="submit" disabled={loading} className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors">
+            {loading ? "Logging in..." : "Login to account"}
+          </Button>
         </form>
-        <p className="text-center text-sm mt-4">
-          No account? <a href="/register" className="text-blue-600 hover:underline">Register</a>
-        </p>
+
+        <div className="mt-6 text-center text-sm text-slate-500">
+          Don't have an account?{" "}
+          <a href="/register" className="font-medium text-blue-600 hover:underline hover:text-blue-700 transition-colors">
+            Create an account
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -13,10 +13,8 @@ export default function VendorDashboardGateway() {
   const { user } = useAuth();
   const [hasProfile, setHasProfile] = useState(true);
   const [bookings, setBookings] = useState([]);
-  const [metrics, setMetrics] = useState({ total: 0, completed: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
 
-  // Onboarding Form State
   const [onboardingData, setOnboardingData] = useState({
     businessName: "",
     description: "",
@@ -24,17 +22,12 @@ export default function VendorDashboardGateway() {
     contactPhone: ""
   });
 
-  // Senior Dev Pattern: Defensive formatting helper to prevent React child rendering crashes
   const renderSafeAddress = (address) => {
     if (!address) return "No address provided";
-    
-    // If the data is a structured object, unwrap and parse its keys safely
     if (typeof address === "object") {
       const { street, city, state, pincode } = address;
       return [street, city, state, pincode].filter(Boolean).join(", ");
     }
-    
-    // Fallback if it is already a flat string format
     return address;
   };
 
@@ -42,12 +35,7 @@ export default function VendorDashboardGateway() {
     try {
       setLoading(true);
       const response = await getVendorBookings();
-      setBookings(response.bookings);
-      
-      const total = response.bookings.length;
-      const completed = response.bookings.filter(b => b.status === "completed").length;
-      const pending = response.bookings.filter(b => b.status === "pending").length;
-      setMetrics({ total, completed, pending });
+      setBookings(Array.isArray(response.bookings) ? response.bookings : []);
       setHasProfile(true);
     } catch (err) {
       if (err.response?.status === 404) {
@@ -67,10 +55,11 @@ export default function VendorDashboardGateway() {
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
       await updateBookingStatus(bookingId, newStatus);
-      alert(`Booking updated to ${newStatus}`);
       checkProfileAndFetchData();
     } catch (err) {
-      alert("Failed to update booking status.");
+      // SENIOR DEV PATTERN: Expose the raw API error message instead of a generic string
+      console.error("Full Error Details:", err);
+      alert(`Update Failed: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -79,7 +68,6 @@ export default function VendorDashboardGateway() {
     try {
       setLoading(true);
       await api.post("/vendor/profile", onboardingData);
-      alert("Business profile configured successfully!");
       setHasProfile(true);
       checkProfileAndFetchData();
     } catch (err) {
@@ -89,10 +77,26 @@ export default function VendorDashboardGateway() {
     }
   };
 
+  const totalJobs = bookings.length;
+  const completedJobs = bookings.filter(b => b.status === "completed").length;
+  const pendingJobs = bookings.filter(b => b.status === "pending" || b.status === "accepted").length;
+
+  const totalRevenue = bookings
+    .filter(b => b.status === "completed" && b.paymentStatus === "paid")
+    .reduce((sum, b) => sum + (b.service?.basePrice || 0), 0);
+
+  const projectedRevenue = bookings
+    .filter(b => b.status !== "completed")
+    .reduce((sum, b) => sum + (b.service?.basePrice || 0), 0);
+
+  const pendingSettlements = bookings
+    .filter(b => b.status === "completed" && b.paymentStatus !== "paid")
+    .reduce((sum, b) => sum + (b.service?.basePrice || 0), 0);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-slate-500">
-        Syncing system state...
+      <div className="flex items-center justify-center min-h-[calc(100vh-73px)] text-slate-500 font-medium">
+        Syncing financial ledger...
       </div>
     );
   }
@@ -116,7 +120,7 @@ export default function VendorDashboardGateway() {
                 <Input 
                   id="businessName" 
                   required 
-                  placeholder="e.g., Aditya's Rapid Fixes" 
+                  placeholder="e.g., Fast Fix Electronics" 
                   value={onboardingData.businessName}
                   onChange={(e) => setOnboardingData({...onboardingData, businessName: e.target.value})}
                 />
@@ -126,7 +130,7 @@ export default function VendorDashboardGateway() {
                 <Input 
                   id="description" 
                   required 
-                  placeholder="Expert smartphone, laptop, and gadget repairs" 
+                  placeholder="Expert repairs and diagnostics" 
                   value={onboardingData.description}
                   onChange={(e) => setOnboardingData({...onboardingData, description: e.target.value})}
                 />
@@ -159,55 +163,76 @@ export default function VendorDashboardGateway() {
         ) : (
           
           <>
-            <h1 className="text-2xl font-bold mb-2">Vendor Command Center</h1>
-            <p className="text-gray-500 mb-8">Manage active requests and track incoming marketplace revenue.</p>
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 mb-1">Financial Ledger</h1>
+                <p className="text-gray-500">Track your marketplace revenue and active job queue.</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium text-slate-500">Total Cleared Earnings</p>
+                <p className="text-4xl font-extrabold text-green-600">₹{totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6">
-                <h2 className="text-sm font-medium text-slate-500 mb-1">Total Orders</h2>
-                <p className="text-3xl font-bold text-slate-900">{metrics.total}</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Jobs</h2>
+                <p className="text-2xl font-bold text-slate-900">{totalJobs}</p>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6">
-                <h2 className="text-sm font-medium text-slate-500 mb-1">Completed</h2>
-                <p className="text-3xl font-bold text-green-600">{metrics.completed}</p>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Completed</h2>
+                <p className="text-2xl font-bold text-blue-600">{completedJobs}</p>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6">
-                <h2 className="text-sm font-medium text-slate-500 mb-1">Active / Pending</h2>
-                <p className="text-3xl font-bold text-yellow-600">{metrics.pending}</p>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Pending Pay</h2>
+                <p className="text-2xl font-bold text-yellow-600">₹{pendingSettlements.toLocaleString()}</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Pipeline Vol</h2>
+                <p className="text-2xl font-bold text-slate-400">₹{projectedRevenue.toLocaleString()}</p>
               </div>
             </div>
 
-            <h2 className="text-xl font-semibold mb-4">Incoming Requests</h2>
+            <h2 className="text-xl font-semibold mb-4 text-slate-900">Active Job Orders</h2>
             {bookings.length === 0 ? (
-              <p className="text-gray-400 border border-dashed rounded-lg p-8 text-center bg-slate-50">
-                No job orders assigned to your profile yet.
+              <p className="text-gray-400 border border-dashed rounded-xl p-10 text-center bg-slate-50">
+                Your queue is empty. Waiting for marketplace requests.
               </p>
             ) : (
               <div className="space-y-4">
                 {bookings.map((booking) => (
-                  <div key={booking._id} className="bg-white rounded-lg border border-slate-100 p-6 flex justify-between items-center shadow-sm">
+                  <div key={booking._id} className="bg-white rounded-xl border border-slate-200/60 p-6 flex flex-col md:flex-row justify-between md:items-center shadow-sm gap-4">
                     <div>
-                      <p className="font-semibold text-lg text-slate-900">{booking.service?.name}</p>
+                      <div className="flex items-center gap-3 mb-1">
+                        <p className="font-bold text-lg text-slate-900">{booking.service?.name}</p>
+                        <span className="font-mono text-sm bg-slate-100 text-slate-600 px-2 py-0.5 rounded">₹{booking.service?.basePrice}</span>
+                      </div>
                       <p className="text-sm text-slate-500">Client: {booking.customer?.name || "Marketplace User"}</p>
-                      {/* Senior Dev Note: Patched here to call the defensive formatter */}
                       <p className="text-sm text-slate-400">Location: {renderSafeAddress(booking.address)}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                        booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        booking.status === 'accepted' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {booking.status.toUpperCase()}
-                      </span>
+                    <div className="flex flex-col md:items-end gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide ${
+                          booking.status === 'completed' ? 'bg-slate-100 text-slate-600' :
+                          booking.status === 'accepted' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {booking.status}
+                        </span>
+                        {booking.paymentStatus === "paid" && (
+                          <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide bg-green-100 text-green-800">
+                            PAID
+                          </span>
+                        )}
+                      </div>
                       
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex gap-2">
                         {booking.status === "pending" && (
-                          <Button size="sm" onClick={() => handleStatusChange(booking._id, "accepted")} className="bg-blue-600 hover:bg-blue-700 text-white">
-                            Accept Job
+                          <Button size="sm" onClick={() => handleStatusChange(booking._id, "accepted")} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                            Accept Request
                           </Button>
                         )}
                         {booking.status === "accepted" && (
-                          <Button size="sm" onClick={() => handleStatusChange(booking._id, "completed")} className="bg-green-600 hover:bg-green-700 text-white">
+                          <Button size="sm" onClick={() => handleStatusChange(booking._id, "completed")} className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
                             Mark Complete
                           </Button>
                         )}

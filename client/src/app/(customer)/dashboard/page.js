@@ -3,8 +3,8 @@
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import { getMyBookings } from "@/services/booking.service";
-import { createPayment } from "@/services/payment.service";
 import { createReview } from "@/services/review.service";
+import api from "@/services/api";
 import { useEffect, useState } from "react";
 
 export default function CustomerDashboard() {
@@ -23,8 +23,11 @@ export default function CustomerDashboard() {
 
   const fetchBookings = async () => {
     try {
+      setLoading(true);
       const data = await getMyBookings();
-      setBookings(data.bookings);
+      if (Array.isArray(data)) setBookings(data);
+      else if (data && Array.isArray(data.bookings)) setBookings(data.bookings);
+      else setBookings([]);
     } catch (err) {
       console.error("Failed to fetch bookings", err);
     } finally {
@@ -36,14 +39,67 @@ export default function CustomerDashboard() {
     fetchBookings();
   }, []);
 
+  // Dynamically load the Razorpay SDK
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handlePayment = async (bookingId, amount) => {
-    if (!window.confirm(`Proceed to pay ₹${amount} via UPI?`)) return;
+    const isLoaded = await loadRazorpayScript();
+    if (!isLoaded) {
+      alert("Razorpay SDK failed to load. Are you online?");
+      return;
+    }
+
     try {
-      await createPayment({ bookingId, amount, method: "upi" });
-      alert("Payment successful!");
-      fetchBookings();
+      // 1. Ask backend to create a secure Order ID
+      const { data: order } = await api.post("/payment/create-order", { bookingId, amount });
+
+      // 2. Initialize the Razorpay Checkout Modal
+      const options = {
+        key:"rzp_test_T5WQyILijbrTt9", 
+        amount: order.amount,
+        currency: order.currency,
+        name: "Fixora",
+        description: "Payment for Service",
+        order_id: order.id,
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+        theme: {
+          color: "#2563EB", // Matches your Tailwind blue-600
+        },
+        // 3. Handle the success callback
+        handler: async function (response) {
+          try {
+            const verifyRes = await api.post("/payment/verify", {
+              ...response,
+              bookingId,
+            });
+
+            if (verifyRes.data.success) {
+              alert("Payment successful! Your receipt has been generated.");
+              fetchBookings(); // Refresh the UI to show the 'Paid' badge
+            }
+          } catch (err) {
+            alert(err.response?.data?.message || "Payment verification failed.");
+          }
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+
     } catch (error) {
-      alert("Payment failed. " + (error.response?.data?.message || ""));
+      console.error(error);
+      alert(error.response?.data?.message || "Server error while initiating payment.");
     }
   };
 

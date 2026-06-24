@@ -16,6 +16,6 @@ export const getVendorBookings = async () => {
 };
 
 export const updateBookingStatus = async (id, data) => {
-  const response = await api.patch(`/booking/${id}/status`, data);
+  const response = await api.patch(`/booking/${id}/status`, { status: data });
   return response.data;
 };

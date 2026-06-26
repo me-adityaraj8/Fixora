@@ -33,7 +33,7 @@ export const createBooking = async (req, res) => {
       booking,
     });
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({message: 'Server error', error: error.message});
   }
 };
 
@@ -48,7 +48,7 @@ export const getMyBookings = async (req, res) => {
 
     res.status(200).json({bookings});
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({message: 'Server error', error: error.message});
   }
 };
 
@@ -68,7 +68,7 @@ export const getVendorBookings = async (req, res) => {
 
     res.status(200).json({bookings});
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({message: 'Server error', error: error.message});
   }
 };
 
@@ -97,6 +97,6 @@ export const updateBookingStatus = async (req, res) => {
       booking,
     });
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({message: 'Server error', error: error.message});
   }
 };

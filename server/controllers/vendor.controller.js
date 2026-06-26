@@ -14,7 +14,7 @@ export const registerVendor = async (req, res) => {
     
     res.status(201).json({ message: "Vendor registered successfully", vendor });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -24,7 +24,7 @@ export const getVendorProfile = async (req, res) => {
     if (!vendor) return res.status(404).json({ message: "Vendor profile not found" });
     res.status(200).json({ vendor });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -33,6 +33,6 @@ export const getAllVendors = async (req, res) => {
     const vendors = await Vendor.find({ isActive: true }).select("businessName _id rating");
     res.status(200).json({ vendors });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({ message: "Server error", error: error.message });
   }
 };

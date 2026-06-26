@@ -1,56 +1,56 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import Razorpay from "razorpay";
+import crypto from "crypto";
+import Booking from "../models/booking.js";
+// Initialize Razorpay (We will add real keys to your .env later)
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_dummykey",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "dummysecret",
+});
 
-import Payment from '../models/Payment.js';
-import Booking from '../models/Booking.js';
-
-// @route   POST /api/payment/create
-// @access  Private (customer only)
-export const createPayment = async (req, res) => {
+export const createOrder = async (req, res) => {
   try {
-    const {bookingId, amount, method} = req.body;
+    const { amount, bookingId } = req.body;
 
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({message: 'Booking not found'});
+    if (!amount || !bookingId) {
+      return res.status(400).json({ message: "Amount and Booking ID are required" });
     }
 
-    const payment = await Payment.create({
-      booking: bookingId,
-      customer: req.user._id,
-      vendor: booking.vendor,
-      amount,
-      method,
-      status: 'paid',  // simulating success for now
-      paidAt: new Date(),
-    });
+    const options = {
+      amount: amount * 100, // Razorpay strictly calculates in paise (₹1 = 100 paise)
+      currency: "INR",
+      receipt: `receipt_${bookingId}`,
+    };
 
-    // Update booking payment status
-    booking.paymentStatus = 'paid';
-    booking.price.final = amount;
-    await booking.save();
+    const order = await razorpay.orders.create(options);
+    if (!order) return res.status(500).json({ message: "Failed to create order" });
 
-    res.status(201).json({
-      message: 'Payment recorded successfully',
-      payment,
-    });
+    res.status(200).json(order);
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error("🚨 PAYMENT_ORDER_CRASH:", error);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// @route   GET /api/payment/booking/:bookingId
-// @access  Private
-export const getPaymentByBooking = async (req, res) => {
+export const verifyPayment = async (req, res) => {
   try {
-    const payment = await Payment.findOne({booking: req.params.bookingId});
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body;
 
-    if (!payment) {
-      return res.status(404).json({message: 'Payment not found'});
+    // Cryptographically verify the payment authenticity
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "dummysecret")
+      .update(sign.toString())
+      .digest("hex");
+
+    if (razorpay_signature === expectedSign) {
+      // Math checks out. It's real money. Update the database!
+      await Booking.findByIdAndUpdate(bookingId, { paymentStatus: "paid" });
+      return res.status(200).json({ message: "Payment verified successfully", success: true });
+    } else {
+      return res.status(400).json({ message: "Invalid payment signature!", success: false });
     }
-
-    res.status(200).json({payment});
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error("🚨 PAYMENT_VERIFY_CRASH:", error);
+    res.status(500).json({ message: "Failed to verify payment" });
   }
 };

@@ -55,7 +55,7 @@ export const createReview = async (req, res) => {
       review,
     });
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({message: 'Server error', error: error.message});
   }
 };
 
@@ -69,6 +69,6 @@ export const getVendorReviews = async (req, res) => {
 
     res.status(200).json({reviews});
   } catch (error) {
-    res.status(500).json({message: 'Server error', error: error.message});
+    console.error('SERVER_CRASH_LOG:', typeof err !== 'undefined' ? err : typeof error !== 'undefined' ? error : 'Unhandled exception details'); res.status(500).json({message: 'Server error', error: error.message});
   }
 };

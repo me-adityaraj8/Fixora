@@ -1,8 +1,15 @@
 import express from "express";
-import { getServices, getServiceById } from "../controllers/service.controller.js";
+import * as serviceController from "../controllers/service.controller.js";
 
 const router = express.Router();
-router.get("/", getServices);
-router.get("/:id", getServiceById);
+
+const fetchAllFn = serviceController.getAllServices || serviceController.getServices || serviceController.fetchAllServices;
+
+router.get('/all', fetchAllFn);
+router.get('/:id', serviceController.getServiceById);
+
+if (serviceController.createService) router.post('/', serviceController.createService);
+if (serviceController.updateService) router.put('/:id', serviceController.updateService);
+if (serviceController.deleteService) router.delete('/:id', serviceController.deleteService);
 
 export default router;

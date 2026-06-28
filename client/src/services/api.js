@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://fixora-3yxq.onrender.com",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://fixora-3yxq.onrender.com/api",
 });
 
 // Attach token to every request automatically

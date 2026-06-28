@@ -1,6 +1,6 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import Booking from "../models/booking.js";
+import Booking from "../models/Booking.js";
 // Initialize Razorpay (We will add real keys to your .env later)
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_dummykey",
